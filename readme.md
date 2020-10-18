@@ -26,11 +26,12 @@ This is an educational project, which has a few goals:
 - this project starts from [the Sonos Tract's example][sonos-example-mobilenet]
   for execution the model locally, and makes the necessary changes to compile it
   to WebAssembly.
+- this project does not treat training neural network models.
 - while the _approach_ used by this project can be used to execute inferences
   using different neural network models, the implementation is specialized for
   performing inferences using MobileNet model. Changing the model architecture,
-  as well as its inputs and outputs, requires significant changes in both the
-  WebAssembly module, as well as how it is instantiated in Wasmtime.
+  as well as its inputs and outputs, would require changes in both the
+  WebAssembly module, as well as in how it is instantiated in Wasmtime.
 - because a `Wasmtime::Instance` [cannot be safely sent between
   threads][instance-send], a new instance of the module is created for each
   request, which adds to the overall latency.
@@ -85,6 +86,12 @@ predicting on file  husky.jpeg
 inference time:  625 ms
 prediction:  Eskimo dog, husky
 ```
+
+### References
+
+- [the MobileNet V2 neural network model][mobilenet]
+- [running the MobileNet V2 model in Rust, using Sonos
+  Tract][sonos-example-mobilenet]
 
 [binaryen]: https://github.com/WebAssembly/binaryen#tools
 [mobilenet]:

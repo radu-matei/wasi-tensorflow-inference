@@ -3,7 +3,7 @@ use tract_tensorflow::prelude::*;
 /// Allocate memory into the module's linear memory
 /// and return the offset to the start of the block.
 #[no_mangle]
-pub unsafe extern "C" fn alloc(len: usize) -> *mut u8 {
+pub extern "C" fn alloc(len: usize) -> *mut u8 {
     let mut buf = Vec::with_capacity(len);
     let ptr = buf.as_mut_ptr();
 
@@ -14,11 +14,12 @@ pub unsafe extern "C" fn alloc(len: usize) -> *mut u8 {
 /// This is the module's entry point for executing inferences.
 /// It takes as arguments pointers to the start of the module's memory blocks
 /// where the model and the image were copied, as well as their lengths,
-/// meaning that callers of this function must first copy the model and
-/// image into the module's linear memory using the module's `alloc` function.
+/// meaning that callers of this function must allocate memory for both
+/// the model and image data using the `alloc` function, then copy it
+/// into the module's linear memory at the pointers returned by `alloc`.
 ///
 /// It retrieves the contents of the model and image, then calls
-/// the `wasmtime_infer` function, which performs the prediction.
+/// the `infer` function, which performs the prediction.
 #[no_mangle]
 pub unsafe extern "C" fn infer_from_ptrs(
     model_ptr: *mut u8,
@@ -29,7 +30,7 @@ pub unsafe extern "C" fn infer_from_ptrs(
     let model_bytes = Vec::from_raw_parts(model_ptr, model_len, model_len);
     let img_bytes = Vec::from_raw_parts(img_ptr, img_len, img_len);
 
-    return wasmtime_infer(&model_bytes, &img_bytes);
+    return infer(&model_bytes, &img_bytes);
 }
 
 /// Perform the inference given the contents of the model and the image, and
@@ -38,7 +39,7 @@ pub unsafe extern "C" fn infer_from_ptrs(
 /// Adapted from https://github.com/sonos/tract/tree/main/examples/tensorflow-mobilenet-v2 and
 /// using the TensorFlow Mobilenet V2 model.
 /// See https://github.com/tensorflow/models/tree/master/research/slim/nets/mobilenet
-fn wasmtime_infer(model_bytes: &[u8], image_bytes: &[u8]) -> i32 {
+fn infer(model_bytes: &[u8], image_bytes: &[u8]) -> i32 {
     let mut model = std::io::Cursor::new(model_bytes);
     let model = tract_tensorflow::tensorflow()
         .model_for_read(&mut model)

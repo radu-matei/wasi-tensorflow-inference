@@ -14,3 +14,6 @@ tokio = { version = "0.2", features = ["full"] }
 tokio-util = { version = "0.3.1", features=["compat"] }
 futures = "0.3"
 anyhow = "1.0"
+
+[workspace]
+members = ["crates/wasi-mobilenet-inference"]

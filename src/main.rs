@@ -49,7 +49,7 @@ async fn predict(req: Request<Body>) -> Result<Response<Body>, anyhow::Error> {
     }
 }
 
-/// Download an image from a given URL and run the Mobilenet V2 model.
+/// Download an image from a given URL and run the MobileNet V2 model.
 async fn get_prediction(url: &str) -> Result<String, anyhow::Error> {
     let img_bytes = fetch_url_to_bytes(url).await?;
     let model_bytes = read_file_bytes(MOBILENET_V2.to_string())?;
@@ -61,7 +61,7 @@ async fn get_prediction(url: &str) -> Result<String, anyhow::Error> {
 
     let start = Instant::now();
 
-    // Write the Mobilenet model and the image contents to
+    // Write the MobileNet model and the image contents to
     // the module's linear memory, and get their pointers.
     let model_bytes_ptr = write_guest_memory(&model_bytes, &instance)?;
     let img_bytes_ptr = write_guest_memory(&img_bytes, &instance)?;
@@ -115,7 +115,7 @@ async fn fetch_url_to_bytes(url: &str) -> Result<Vec<u8>, anyhow::Error> {
 }
 
 /// Get the human-readable label of a prediction
-/// from the Mobilenet V2 labels file
+/// from the MobileNet V2 labels file
 fn get_label(num: usize) -> Result<String, anyhow::Error> {
     // The result of executing the inference is the predicted class,
     // which also indicates the line number in the (1-indexed) labels file.
@@ -146,24 +146,24 @@ fn write_guest_memory(bytes: &Vec<u8>, instance: &Instance) -> Result<isize, any
     // The result is an offset relative to the module's linear memory, which is
     // used to copy the bytes into the module's memory.
     // Then, return the offset.
+
+    let alloc = instance
+        .get_func(ALLOC_FN)
+        .expect("expected alloc function not found");
+    let alloc_result = alloc.call(&vec![Val::from(bytes.len() as i32)])?;
+
+    let guest_ptr_offset = match alloc_result
+        .get(0)
+        .expect("expected the result of the allocation to have one value")
+    {
+        Val::I32(val) => *val as isize,
+        _ => return Err(anyhow::Error::msg("guest pointer must be Val::I32")),
+    };
     unsafe {
-        let alloc = instance
-            .get_func(ALLOC_FN)
-            .expect("expected alloc function not found");
-        let alloc_result = alloc.call(&vec![Val::from(bytes.len() as i32)])?;
-
-        let guest_ptr_offset = match alloc_result
-            .get(0)
-            .expect("expected the result of the allocation to have one value")
-        {
-            Val::I32(val) => *val as isize,
-            _ => return Err(anyhow::Error::msg("guest pointer must be Val::I32")),
-        };
-
         let raw = memory.data_ptr().offset(guest_ptr_offset);
         raw.copy_from(bytes.as_ptr(), bytes.len());
-        return Ok(guest_ptr_offset);
     }
+    return Ok(guest_ptr_offset);
 }
 
 /// Create a Wasmtime::Instance from a compiled module and

@@ -1,12 +1,16 @@
-# TensorFlow inferencing in WebAssembly outside the browser
+# `wasi-tensorflow-inference`
 
-This project is a demonstration of running the [MobileNet V2 TensorFlow
+### TensorFlow inferencing in WebAssembly outside the browser
+
+<https://radu-matei.com/blog/tensorflow-inferencing-wasi/>
+
+This is a demonstration of running the [MobileNet V2 TensorFlow
 model][mobilenet] in WebAssembly System Interface (WASI) runtimes outside the
 browser. The project uses [the Sonos Tract crate][sonos-tract] to build an
 inference program in Rust, which is then compiled to Rust's `wasm32-wasi`
 WebAssembly target.
 
-This is an educational project, which has a few goals:
+This is an experimental project, which has a few goals:
 
 - build a more complex WebAssembly module that does _not_ use any code
   generation for bindings (such as [`wasm-bindgen`][wasm-bindgen]).
@@ -53,7 +57,7 @@ module instantiation time: 774.715145ms
 inference time: 723.531083ms
 ```
 
-In another terminal instance (or from a HTTP request builder, such as Postman):
+In another terminal instance (or from an HTTP request builder, such as Postman):
 
 ```
 $ curl --request GET 'localhost:3000' \
@@ -92,6 +96,8 @@ prediction:  Eskimo dog, husky
 - [the MobileNet V2 neural network model][mobilenet]
 - [running the MobileNet V2 model in Rust, using Sonos
   Tract][sonos-example-mobilenet]
+- [the WASI-NN proposal][wasi-nn]
+- [Wasmtime module instantiation discussion][wasmtime-perf]
 
 [binaryen]: https://github.com/WebAssembly/binaryen#tools
 [mobilenet]:
@@ -103,3 +109,6 @@ prediction:  Eskimo dog, husky
 [instance-send]: https://github.com/bytecodealliance/wasmtime/issues/793
 [crate]: ./crates/wasi-mobilenet-inference/src/lib.rs
 [build]: ./build.rs
+[wasi-nn]:
+  https://www.w3.org/2020/06/machine-learning-workshop/talks/introducing_wasi_nn.html
+[wasmtime-perf]: https://github.com/bytecodealliance/wasmtime/issues/2295

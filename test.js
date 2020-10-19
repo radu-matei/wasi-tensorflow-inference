@@ -2,12 +2,12 @@ const fs = require("fs");
 const { WASI } = require("wasi");
 const path = require("path");
 
-const mod_bytes = fs.readFileSync("./model/optimized-wasi.wasm");
+const module_bytes = fs.readFileSync("./model/optimized-wasi.wasm");
 const model_bytes = fs.readFileSync("./model/mobilenet_v2_1.4_224_frozen.pb");
 const label_bytes = fs.readFileSync("./model/labels.txt", "utf-8");
 const testdata_dir = "./testdata";
 
-const mod = new WebAssembly.Module(mod_bytes);
+const mod = new WebAssembly.Module(module_bytes);
 const wasi = new WASI();
 
 (async () => {
@@ -18,24 +18,20 @@ const wasi = new WASI();
 
   const files = fs.readdirSync(testdata_dir);
   for (const f of files) {
+    const img_bytes = fs.readFileSync(path.join(testdata_dir, f));
+
     console.log("\npredicting on file ", f);
-    console.log("prediction: ", getPrediction(f, instance) + "\n");
+    console.log(
+      "prediction: ",
+      getPrediction(model_bytes, img_bytes, instance) + "\n"
+    );
   }
 })();
 
-function getPrediction(file, instance) {
+function getPrediction(model_bytes, img_bytes, instance) {
   var start = new Date();
-  const img_bytes = fs.readFileSync(path.join(testdata_dir, file));
-  var mptr = writeGuestMemory(
-    model_bytes,
-    instance.exports.alloc,
-    instance.exports.memory
-  );
-  var iptr = writeGuestMemory(
-    img_bytes,
-    instance.exports.alloc,
-    instance.exports.memory
-  );
+  var mptr = writeGuestMemory(model_bytes, instance);
+  var iptr = writeGuestMemory(img_bytes, instance);
 
   let pred = instance.exports.infer_from_ptrs(
     mptr,
@@ -48,10 +44,10 @@ function getPrediction(file, instance) {
   return getLabel(pred);
 }
 
-function writeGuestMemory(bytes, alloc, memory) {
+function writeGuestMemory(bytes, instance) {
   var len = bytes.byteLength;
-  var ptr = alloc(len);
-  var m = new Uint8Array(memory.buffer, ptr, len);
+  var ptr = instance.exports.alloc(len);
+  var m = new Uint8Array(instance.exports.memory.buffer, ptr, len);
   m.set(new Uint8Array(bytes.buffer));
 
   return ptr;
